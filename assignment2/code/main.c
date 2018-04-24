@@ -42,7 +42,14 @@
 #define COUNT "count"
 #define LS "ls"
 
-const char * filename = "/Users/iznauy/Desktop/C/a.img";
+#define RED "\033[31m"
+#define END "\033[0m"
+#define GREEN "\033[32m"
+#define BLUE  "\033[34m"
+#define PURPLE "\033[35m"
+#define YELLOW "\033[33m"
+
+const char * filename = "a.img";
 
 typedef int FileType;
 
@@ -71,15 +78,9 @@ struct Dir_Tree {
     size_t file_size;
 } dir_tree;
 
-void _printf(char * arg)
-{
-    printf(arg);
-}
+void _printf(char * arg);
 
-void _putchar(int c)
-{
-    putchar(c);
-}
+void my_putchar(int c);
 
 void itoa(int a, char * space); // a is greater than zero
 char to_low_case(char c);
@@ -92,11 +93,13 @@ void trim(char * str);
 void show_prompt();
 void show_file_content(char * file);
 void show_count(char * path);
-void show_system_structure();
+void show_system_structure(char * path);
 const struct Dir_Tree * _find_logic_file(char * path);
 void _show_file_entry(int _pre, const struct Dir_Tree * tree);
+void _show_structure_entry(int _pre, const struct Dir_Tree * tree);
 int _count_file(const struct Dir_Tree * tree);
 int _count_dir(const struct Dir_Tree * tree);
+void _set_color(const char * color);
 
 int main()
 {
@@ -118,10 +121,19 @@ int main()
             trim(buffer);
             show_count(buffer);
         } else if (strcmp(buffer, LS) == 0) {
-            show_system_structure();
+            char c = getchar();
+            if (c == '\n')
+                show_system_structure(NULL);
+            else {
+                scanf("%s", buffer);
+                trim(buffer);
+                show_system_structure(buffer);
+            }
         } else {
             // wrong
+            _set_color(RED);
             _printf("Wrong Input, please check your instruction.");
+            _set_color(END);
         }
     }
 }
@@ -182,7 +194,8 @@ void build_dir_tree(struct Dir_Tree * const tree, _bool is_root)
                          + (clus - 2) * bpb.SecPerClus * bpb.BytsPerSec;
         }
         if ((image[i + 0xB] == FILE_ATTRIBUTE || image[i + 0xB] == DIR_ATTRIBUTE)
-                && ((image[i] >= 'A' && image[i] <= 'Z') || (image[i] >= 'a' && image[i] <= 'z'))) {
+                && ((image[i] >= 'A' && image[i] <= 'Z') || (image[i] >= 'a' && image[i] <= 'z') ||
+                (image[i] >= '0' && image[i] <= '9'))) {
             // file or directory
             struct Dir_Tree * sub_tree = (struct Dir_Tree *) malloc(sizeof(struct Dir_Tree));
             size_t within_offset;
@@ -235,7 +248,9 @@ int get_next_clus(int current_clus)
 
 void show_prompt()
 {
+    _set_color(GREEN);
     _printf("iznauy: > ");
+    _set_color(END);
 }
 
 void trim(char * str) {
@@ -247,6 +262,8 @@ void trim(char * str) {
 
 const struct Dir_Tree * _find_logic_file(char * path)
 {
+    if (path == NULL) // path = null means the root path
+        return &dir_tree;
     char delims[] = "/";
     char * current_name = NULL;
     current_name = strtok(path, delims);
@@ -281,9 +298,11 @@ void show_file_content(char * file)
 {
     const struct Dir_Tree * tree = _find_logic_file(file);
     if (tree == NULL || tree->type == _DIRECTORY) {
+        _set_color(RED);
         _printf("Error: ");
         _printf(file);
         _printf(" is not a valid file path.\n");
+        _set_color(END);
         return;
     }
     size_t size = tree->file_size;
@@ -300,9 +319,39 @@ void show_file_content(char * file)
                      + (current_clus - 2) * bpb.SecPerClus * bpb.BytsPerSec;
         }
         int c = parse_int(offset + within_count, 1);
-        _putchar(c);
+        my_putchar(c);
     }
-    _putchar('\n');
+    my_putchar('\n');
+}
+
+
+void _show_structure_entry(int _pre, const struct Dir_Tree * tree)
+{   // all sub directories and file need to be print
+    int pre_space = _pre << 2;
+    tree = tree->first_child;
+    while (tree) {
+        for (int i = 0; i < pre_space; i++)
+            my_putchar(' ');
+        if (tree->type == _FILE) {
+            // if it's a file
+            _set_color(PURPLE);
+            _printf(tree->name);
+            if (strlen(tree->extension) != 0) {
+                my_putchar('.');
+                _printf(tree->extension);
+                my_putchar('\n');
+            }
+            _set_color(END);
+        } else {
+            _set_color(BLUE);
+            _printf(tree->name);
+            my_putchar('/');
+            my_putchar('\n');
+            _show_structure_entry(_pre + 1, tree);
+            _set_color(END);
+        }
+        tree = tree->nextSibling;
+    }
 }
 
 void _show_file_entry(int _pre, const struct Dir_Tree * tree)
@@ -311,7 +360,7 @@ void _show_file_entry(int _pre, const struct Dir_Tree * tree)
         return;
     int pre_space = _pre << 2;
     for (int i = 0; i < pre_space; i++)
-        _putchar(' ');
+        my_putchar(' ');
     int file_count = _count_file(tree);
     int dir_count = _count_dir(tree);
     _printf(tree->name);
@@ -319,10 +368,18 @@ void _show_file_entry(int _pre, const struct Dir_Tree * tree)
     char buff[10];
     itoa(file_count, buff);
     _printf(buff);
-    _printf(" file(s), ");
+    if(file_count == 0 || file_count == 1) {
+        _printf(" file, ");
+    } else {
+        _printf(" file(s), ");
+    }
     itoa(dir_count, buff);
     _printf(buff);
-    _printf(" dir(s)\n");
+    if (dir_count == 0 || dir_count == 1) {
+        _printf(" dir\n");
+    } else {
+        _printf(" dir(s)\n");
+    }
     tree = tree->first_child;
     while (tree != NULL) {
         _show_file_entry(_pre + 1, tree);
@@ -334,19 +391,32 @@ void show_count(char * path)
 {
     const struct Dir_Tree * tree = _find_logic_file(path);
     if (tree == NULL || tree->type == _FILE) {
+        _set_color(RED);
         _printf("Error: ");
         _printf(path);
         _printf(" is not a valid directory.\n");
+        _set_color(END);
         return;
     }
+    _set_color(YELLOW);
     _show_file_entry(0, tree);
-
+    _set_color(END);
 }
 
-void show_system_structure()
+void show_system_structure(char * path)
 {
-
+    const struct Dir_Tree * tree = _find_logic_file(path);
+    if (!tree || tree->type == _FILE) {
+        _set_color(RED);
+        _printf("Error: ");
+        _printf(path);
+        _printf(" is not a valid directory.\n");
+        _set_color(END);
+        return;
+    }
+    _show_structure_entry(0, tree);
 }
+
 
 void itoa(int a, char * space)
 {
@@ -393,4 +463,18 @@ int _count_dir(const struct Dir_Tree * tree)
         tree = tree->nextSibling;
     }
     return count;
+}
+
+void _set_color(const char * color)
+{
+    _printf(color);
+}
+
+void _printf(char * arg)
+{
+    char * current = arg;
+    while (*current != 0) {
+        my_putchar(*current);
+        current++;
+    }
 }
