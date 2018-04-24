@@ -81,6 +81,7 @@ void _putchar(int c)
     putchar(c);
 }
 
+void itoa(int a, char * space); // a is greater than zero
 char to_low_case(char c);
 void load_img(const char * filename);
 void load_BPB();
@@ -93,6 +94,9 @@ void show_file_content(char * file);
 void show_count(char * path);
 void show_system_structure();
 const struct Dir_Tree * _find_logic_file(char * path);
+void _show_file_entry(int _pre, const struct Dir_Tree * tree);
+int _count_file(const struct Dir_Tree * tree);
+int _count_dir(const struct Dir_Tree * tree);
 
 int main()
 {
@@ -301,11 +305,92 @@ void show_file_content(char * file)
     _putchar('\n');
 }
 
+void _show_file_entry(int _pre, const struct Dir_Tree * tree)
+{
+    if (tree->type == _FILE)
+        return;
+    int pre_space = _pre << 2;
+    for (int i = 0; i < pre_space; i++)
+        _putchar(' ');
+    int file_count = _count_file(tree);
+    int dir_count = _count_dir(tree);
+    _printf(tree->name);
+    _printf(": ");
+    char buff[10];
+    itoa(file_count, buff);
+    _printf(buff);
+    _printf(" file(s), ");
+    itoa(dir_count, buff);
+    _printf(buff);
+    _printf(" dir(s)\n");
+    tree = tree->first_child;
+    while (tree != NULL) {
+        _show_file_entry(_pre + 1, tree);
+        tree = tree->nextSibling;
+    }
+}
+
 void show_count(char * path)
+{
+    const struct Dir_Tree * tree = _find_logic_file(path);
+    if (tree == NULL || tree->type == _FILE) {
+        _printf("Error: ");
+        _printf(path);
+        _printf(" is not a valid directory.\n");
+        return;
+    }
+    _show_file_entry(0, tree);
+
+}
+
+void show_system_structure()
 {
 
 }
 
-void show_system_structure(){
+void itoa(int a, char * space)
+{
+    int count = 0;
+    if (a == 0) {
+        space[0] = '0';
+        count += 1;
+    }
+    int t = a;
+    while(t > 0) {
+        int mod = t % 10;
+        space[count++] = '0' + mod;
+        t /= 10;
+    }
+    for (int i = 0; i < count / 2; i++) {
+        char temp = space[i];
+        space[i] = space[count - i - 1];
+        space[count - i - 1] = temp;
+    }
+    space[count] = '\0';
+}
 
+int _count_file(const struct Dir_Tree * tree)
+{
+    int count = 0;
+    tree = tree->first_child;
+    while (tree) {
+        if (tree->type == _FILE)
+            count += 1;
+        else
+            count += _count_file(tree);
+        tree = tree->nextSibling;
+    }
+    return count;
+}
+
+int _count_dir(const struct Dir_Tree * tree)
+{
+    int count = 0;
+    tree = tree->first_child;
+    while(tree) {
+        if (tree->type == _DIRECTORY)
+            count += 1 + _count_dir(tree);
+        tree = tree->nextSibling;
+    }
+    return count;
 }
