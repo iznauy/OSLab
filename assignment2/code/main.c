@@ -1,0 +1,311 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define DISK_SIZE 1474560 // 2880 sections and 512 byte per section
+#define DIR_NAME_SIZE 9 // 8 + 1, 1 means \0
+#define DIR_EXTENSION_SIZE 4 // 3 + 1, 1 means \0
+
+#define LENGTH_PRE_ENTRY 32
+
+#define FILE_ATTRIBUTE 0x20
+#define DIR_ATTRIBUTE 0x10
+
+#define BYTES_PER_SEC_OFFSET 11
+#define BYTES_PER_SEC_LENGTH 2
+
+#define SEC_PER_CLUS_OFFSET 13
+#define SEC_PER_CLUS_LENGTH 1
+
+#define RSVD_SEC_CNT_OFFSET 14
+#define RSVD_SEC_CNT_LENGTH 2
+
+#define NUM_FATS_OFFSET 16
+#define NUM_FATS_LENGTH 1
+
+#define ROOT_ENT_CNT_OFFSET 17
+#define ROOT_ENT_CNT_LENGTH 2
+
+#define FAT_SZ_16_OFFSET 22
+#define FAT_SZ_16_LENGTH 2
+
+#define _FILE 1
+#define _DIRECTORY 2
+
+#define true 1
+#define false 0
+
+#define BUFF_SIZE 1024
+
+#define CAT "cat"
+#define EXIT "exit"
+#define COUNT "count"
+#define LS "ls"
+
+const char * filename = "/Users/iznauy/Desktop/C/a.img";
+
+typedef int FileType;
+
+typedef int _bool;
+
+unsigned char image[DISK_SIZE]; // disk, use unsigned char to avoid bit extension
+
+// some fields of BPB Table
+struct BPB {
+    int BytsPerSec;
+    int SecPerClus;
+    int RsvdSecCnt;
+    int NumFATs;
+    int RootEntCnt;
+    int FATSz16;
+} bpb;
+
+// use 2-tree to substitute n-tree
+struct Dir_Tree {
+    char name[DIR_NAME_SIZE];
+    char extension[DIR_EXTENSION_SIZE];
+    FileType type;
+    int first_clus;
+    struct Dir_Tree * first_child;
+    struct Dir_Tree * nextSibling;
+    size_t file_size;
+} dir_tree;
+
+void _printf(char * arg)
+{
+    printf(arg);
+}
+
+void _putchar(int c)
+{
+    putchar(c);
+}
+
+char to_low_case(char c);
+void load_img(const char * filename);
+void load_BPB();
+int parse_int(size_t offset, size_t length);
+void build_dir_tree(struct Dir_Tree * tree, _bool is_root);
+int get_next_clus(int current_clus);
+void trim(char * str);
+void show_prompt();
+void show_file_content(char * file);
+void show_count(char * path);
+void show_system_structure();
+const struct Dir_Tree * _find_logic_file(char * path);
+
+int main()
+{
+    load_img(filename);
+    load_BPB();
+    build_dir_tree(&dir_tree, true);
+    while(true) {
+        show_prompt();
+        char buffer[BUFF_SIZE];
+        scanf("%s", buffer);
+        if (strcmp(buffer, EXIT) == 0) {
+            return 0;
+        } else if (strcmp(buffer, CAT) == 0) {
+            scanf("%s", buffer);
+            trim(buffer);
+            show_file_content(buffer);
+        } else if (strcmp(buffer, COUNT) == 0) {
+            scanf("%s", buffer);
+            trim(buffer);
+            show_count(buffer);
+        } else if (strcmp(buffer, LS) == 0) {
+            show_system_structure();
+        } else {
+            // wrong
+            _printf("Wrong Input, please check your instruction.");
+        }
+    }
+}
+
+char to_low_case(char c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A' + 'a';
+    else
+        return c;
+}
+
+void load_img(const char * filename) // load specific disk image
+{
+    FILE * file;
+    file = fopen(filename, "rb");
+    fread(image, DISK_SIZE, 1, file);
+    fclose(file);
+}
+
+void load_BPB()
+{
+    bpb.BytsPerSec = parse_int(BYTES_PER_SEC_OFFSET, BYTES_PER_SEC_LENGTH);
+    bpb.SecPerClus = parse_int(SEC_PER_CLUS_OFFSET, SEC_PER_CLUS_LENGTH);
+    bpb.RsvdSecCnt = parse_int(RSVD_SEC_CNT_OFFSET, RSVD_SEC_CNT_LENGTH);
+    bpb.NumFATs = parse_int(NUM_FATS_OFFSET, NUM_FATS_LENGTH);
+    bpb.RootEntCnt = parse_int(ROOT_ENT_CNT_OFFSET, ROOT_ENT_CNT_LENGTH);
+    bpb.FATSz16 = parse_int(FAT_SZ_16_OFFSET, FAT_SZ_16_LENGTH);
+}
+
+int parse_int(size_t offset, size_t length)
+{
+    int result = 0;
+    for (size_t i = offset + length - 1; i >= offset; i--) {
+        result = (result << 8) + image[i];
+    }
+    return result;
+}
+
+void build_dir_tree(struct Dir_Tree * const tree, _bool is_root)
+{
+    size_t offset = (bpb.RsvdSecCnt + bpb.NumFATs * bpb.FATSz16) * bpb.BytsPerSec;
+    int clus = tree->first_clus;
+    if (!is_root) {
+        offset += bpb.RootEntCnt * LENGTH_PRE_ENTRY + (clus - 2) * bpb.SecPerClus
+                                                      * bpb.BytsPerSec;
+    }
+    for (size_t i = offset; ; i += LENGTH_PRE_ENTRY) {
+        if (is_root == true && i >= offset + bpb.RootEntCnt * LENGTH_PRE_ENTRY) {
+            break;
+        } else if (!is_root && i >= offset + bpb.SecPerClus * bpb.BytsPerSec) {
+            clus = get_next_clus(clus);
+            if (clus >= 0xff7){
+                break;
+            }
+            offset = i = bpb.RootEntCnt * LENGTH_PRE_ENTRY +
+                         (bpb.RsvdSecCnt + bpb.NumFATs * bpb.FATSz16) * bpb.BytsPerSec
+                         + (clus - 2) * bpb.SecPerClus * bpb.BytsPerSec;
+        }
+        if ((image[i + 0xB] == FILE_ATTRIBUTE || image[i + 0xB] == DIR_ATTRIBUTE)
+                && ((image[i] >= 'A' && image[i] <= 'Z') || (image[i] >= 'a' && image[i] <= 'z'))) {
+            // file or directory
+            struct Dir_Tree * sub_tree = (struct Dir_Tree *) malloc(sizeof(struct Dir_Tree));
+            size_t within_offset;
+            for (within_offset = 0; within_offset < 8 && image[within_offset + i] != 0x20; within_offset += 1) {
+                sub_tree->name[within_offset] = to_low_case(image[within_offset + i]);
+            }
+            sub_tree->name[within_offset] = '\0';
+
+            if (image[i + 0xB] == FILE_ATTRIBUTE) {
+                sub_tree->type = _FILE;
+                for (within_offset = 8; within_offset < 0xB && image[within_offset + i] != 0x20; within_offset += 1) {
+                    sub_tree->extension[within_offset - 8] = to_low_case(image[within_offset + i]);
+                }
+                sub_tree->extension[within_offset - 8] = '\0';
+                sub_tree->file_size = parse_int(i + 28, 4);
+            } else {
+                sub_tree->extension[0] = '\0';
+                sub_tree->type = _DIRECTORY;
+            }
+            sub_tree->first_clus = parse_int(i + 26, 2);
+            sub_tree->first_child = NULL;
+            sub_tree->nextSibling = NULL;
+            if (tree->first_child == NULL) {
+                tree->first_child = sub_tree;
+            } else {
+                struct Dir_Tree * current_tree = tree->first_child;
+                while (current_tree->nextSibling != NULL) {
+                    current_tree = current_tree->nextSibling;
+                }
+                current_tree->nextSibling = sub_tree;
+            }
+            if (sub_tree->type == _DIRECTORY) {
+                build_dir_tree(sub_tree, false);
+            }
+        }
+
+    }
+
+}
+
+int get_next_clus(int current_clus)
+{
+    size_t offset = bpb.RsvdSecCnt * bpb.BytsPerSec + (current_clus >> 1) * 3;
+    if (current_clus % 2 == 0) {
+        return parse_int(offset, 2) & 0xfff;
+    } else {
+        return parse_int(offset + 1, 2) >> 4;
+    }
+}
+
+void show_prompt()
+{
+    _printf("iznauy: > ");
+}
+
+void trim(char * str) {
+    size_t length = strlen(str);
+    while (str[length - 1] == '\n' || str[length - 1] == ' ' || str[length - 1] == '/') {
+        str[--length] = 0;
+    }
+}
+
+const struct Dir_Tree * _find_logic_file(char * path)
+{
+    char delims[] = "/";
+    char * current_name = NULL;
+    current_name = strtok(path, delims);
+    const struct Dir_Tree * pre_tree = &dir_tree;
+    const struct Dir_Tree * current_tree = dir_tree.first_child;
+    while(current_name != NULL) {
+        char full_name[DIR_NAME_SIZE + DIR_EXTENSION_SIZE];
+        strncpy(full_name, current_tree->name, DIR_NAME_SIZE);
+        if (current_tree->type == _FILE) {
+            if (strlen(current_tree->extension) != 0) {
+                strncat(full_name, ".", DIR_NAME_SIZE + DIR_EXTENSION_SIZE);
+                strncat(full_name, current_tree->extension, DIR_EXTENSION_SIZE + DIR_NAME_SIZE);
+            }
+        }
+        if (strcmp(current_name, full_name) != 0) {
+            if (current_tree->nextSibling == NULL)
+                return NULL;
+            else {
+                pre_tree = current_tree;
+                current_tree = current_tree->nextSibling;
+            }
+        } else {
+            pre_tree = current_tree;
+            current_tree = current_tree->first_child;
+            current_name = strtok(NULL, delims);
+        }
+    }
+    return pre_tree;
+}
+
+void show_file_content(char * file)
+{
+    const struct Dir_Tree * tree = _find_logic_file(file);
+    if (tree == NULL || tree->type == _DIRECTORY) {
+        _printf("Error: ");
+        _printf(file);
+        _printf(" is not a valid file path.\n");
+        return;
+    }
+    size_t size = tree->file_size;
+    int current_clus = tree->first_clus;
+    size_t offset = bpb.RootEntCnt * LENGTH_PRE_ENTRY +
+                    (bpb.RsvdSecCnt + bpb.NumFATs * bpb.FATSz16) * bpb.BytsPerSec
+                    + (current_clus - 2) * bpb.SecPerClus * bpb.BytsPerSec;
+    for (int within_count = 0; size > 0; size--, within_count++) {
+        if (within_count == bpb.SecPerClus * bpb.BytsPerSec) {
+            within_count = 0;
+            current_clus = get_next_clus(current_clus);
+            offset = bpb.RootEntCnt * LENGTH_PRE_ENTRY +
+                     (bpb.RsvdSecCnt + bpb.NumFATs * bpb.FATSz16) * bpb.BytsPerSec
+                     + (current_clus - 2) * bpb.SecPerClus * bpb.BytsPerSec;
+        }
+        int c = parse_int(offset + within_count, 1);
+        _putchar(c);
+    }
+    _putchar('\n');
+}
+
+void show_count(char * path)
+{
+
+}
+
+void show_system_structure(){
+
+}
