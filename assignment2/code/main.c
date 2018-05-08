@@ -49,11 +49,12 @@
 #define PURPLE "\033[35m"
 #define YELLOW "\033[33m"
 
-const char * filename = "a.img";
+const char * filename = "/Users/iznauy/Desktop/C/b.img";
 
 typedef int FileType;
 
 typedef int _bool;
+
 
 unsigned char image[DISK_SIZE]; // disk, use unsigned char to avoid bit extension
 
@@ -80,7 +81,10 @@ struct Dir_Tree {
 
 void _printf(char * arg);
 
-void my_putchar(int c);
+void my_putchar(int c)
+{
+    putchar(c);
+}
 
 void itoa(int a, char * space); // a is greater than zero
 char to_low_case(char c);
@@ -270,6 +274,8 @@ const struct Dir_Tree * _find_logic_file(char * path)
     const struct Dir_Tree * pre_tree = &dir_tree;
     const struct Dir_Tree * current_tree = dir_tree.first_child;
     while(current_name != NULL) {
+        if (current_tree == NULL)
+            return NULL;
         char full_name[DIR_NAME_SIZE + DIR_EXTENSION_SIZE];
         strncpy(full_name, current_tree->name, DIR_NAME_SIZE);
         if (current_tree->type == _FILE) {
@@ -296,7 +302,9 @@ const struct Dir_Tree * _find_logic_file(char * path)
 
 void show_file_content(char * file)
 {
-    const struct Dir_Tree * tree = _find_logic_file(file);
+    char temp[1024];
+    strcpy(temp, file);
+    const struct Dir_Tree * tree = _find_logic_file(temp);
     if (tree == NULL || tree->type == _DIRECTORY) {
         _set_color(RED);
         _printf("Error: ");
@@ -389,7 +397,9 @@ void _show_file_entry(int _pre, const struct Dir_Tree * tree)
 
 void show_count(char * path)
 {
-    const struct Dir_Tree * tree = _find_logic_file(path);
+    char temp[1024];
+    strcpy(temp, path);
+    const struct Dir_Tree * tree = _find_logic_file(temp);
     if (tree == NULL || tree->type == _FILE) {
         _set_color(RED);
         _printf("Error: ");
