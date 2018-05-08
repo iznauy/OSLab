@@ -81,10 +81,7 @@ struct Dir_Tree {
 
 void _printf(char * arg);
 
-void my_putchar(int c)
-{
-    putchar(c);
-}
+void my_putchar(int c);
 
 void itoa(int a, char * space); // a is greater than zero
 char to_low_case(char c);
