@@ -125,7 +125,7 @@ PRIVATE void change_to_common()
 
 PRIVATE char key2char(u32 key) {
     char ch = key & 0xFF;
-    if (locked && ch >= 'a' && ch <= 'z')
+    if (locked == TRUE && ch >= 'a' && ch <= 'z')
         ch = ch + 'A' - 'a';
     return ch;
 }
@@ -136,7 +136,7 @@ PRIVATE char key2char(u32 key) {
  *======================================================================*/
 PUBLIC void in_process(u32 key)
 {
-    if ((key & FLAG_EXT) && (KEY & MASK_RAW) == CAPS_LOCK) {
+    if ((key & FLAG_EXT) && (key & MASK_RAW) == CAPS_LOCK) {
         locked = locked == FALSE ? TRUE : FALSE;
         return;
     } else if (mode == COMMON) {
@@ -161,8 +161,8 @@ PUBLIC void in_process(u32 key)
             }
         }
     } else if (mode == SEARCH_INPUT) {
-        if (!(key && FLAG_EXT)) {
-            target[input_size++] = key2char(key); 
+        if (!(key & FLAG_EXT)) {
+            target[target_size++] = key2char(key);
         } else {
             switch(key & MASK_RAW) {
                 case ENTER:
@@ -182,7 +182,7 @@ PUBLIC void in_process(u32 key)
                     break;
             }
         }
-    } else if (mode = SEARCH_VIEW && (KEY & FLAG_EXT) && (key & MASK_RAW) == ESC) {
+    } else if (mode = SEARCH_VIEW && (key & FLAG_EXT) && (key & MASK_RAW) == ESC) {
         change_to_common();
     }
     show();
@@ -192,7 +192,7 @@ PUBLIC void in_process(u32 key)
 PUBLIC void clear() // 每隔20秒清除屏幕
 {
     while(TRUE) {
-        milli_delay(20 * 1000);
+        milli_delay(20 * 10000);
         if (mode == COMMON) 
             init();
     }
