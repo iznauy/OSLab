@@ -116,13 +116,76 @@ PRIVATE void show() // 把用户的输入转化成显示到屏幕上的数据
     set_cursor(row * WIDTH + col + target_size);
 }
 
+PRIVATE void change_to_common() 
+{
+    memset(target, 0, TEXR_SIZE);
+    target_size = 0;
+    mode = COMMON;
+}
+
+PRIVATE char key2char(u32 key) {
+    char ch = key & 0xFF;
+    if (locked && ch >= 'a' && ch <= 'z')
+        ch = ch + 'A' - 'a';
+    return ch;
+}
+
 
 /*======================================================================*
 				in_process
  *======================================================================*/
 PUBLIC void in_process(u32 key)
 {
-    
+    if ((key & FLAG_EXT) && (KEY & MASK_RAW) == CAPS_LOCK) {
+        locked = locked == FALSE ? TRUE : FALSE;
+        return;
+    } else if (mode == COMMON) {
+        if (!(key & FLAG_EXT)) { // 非功能键
+            inputs[input_size++] = key2char(key);
+        } else {
+            switch(key & MASK_RAW) {
+                case ENTER:
+                    inputs[input_size++] = '\n';
+                    break;
+                case TAB:
+                    inputs[input_size++] = '\t';
+                case BACKSPACE:
+                    if (input_size > 0)
+                        inputs[--input_size] = 0;
+                    break;
+                case ESC:
+                    mode = SEARCH_INPUT;
+                    break;
+                default:
+                    break;
+            }
+        }
+    } else if (mode == SEARCH_INPUT) {
+        if (!(key && FLAG_EXT)) {
+            target[input_size++] = key2char(key); 
+        } else {
+            switch(key & MASK_RAW) {
+                case ENTER:
+                    mode = SEARCH_VIEW;
+                    break;
+                case BACKSPACE:
+                    if (target_size == 0) {
+                        change_to_common();
+                    } else {
+                        target[--target_size] = 0;
+                    }
+                    break;
+                case ESC:
+                    change_to_common();
+                    break;
+                default:
+                    break;
+            }
+        }
+    } else if (mode = SEARCH_VIEW && (KEY & FLAG_EXT) && (key & MASK_RAW) == ESC) {
+        change_to_common();
+    }
+    show();
 }
 
 
