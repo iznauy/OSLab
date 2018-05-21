@@ -82,7 +82,6 @@ PRIVATE void show() // 把用户的输入转化成显示到屏幕上的数据
         if (inputs[i] == '\n') { // a new Line
             row = (row + 1) % HEIGHT;
             col= 0;
-            break;
         } else if (inputs[i] == '\t') {
             col = ((col >> 3) + 1) << 3; 
         } else { // a common char
@@ -110,7 +109,7 @@ PRIVATE void show() // 把用户的输入转化成显示到屏幕上的数据
     if (mode != COMMON) {
         row = HEIGHT - 1; // 最后一行
         screen[(row * WIDTH) << 1] = ':';
-        screen[1 + ((row * WIDTH) << 1)] = 00x0e;
+        screen[1 + ((row * WIDTH) << 1)] = 0x0e;
         for (int i = 0; i < target_size; i++) {
             screen[(row * WIDTH + 1 + i) << 1] = target[i];
             screen[((row * WIDTH + 1 + i) << 1) + 1] = 0x0e;
@@ -122,7 +121,6 @@ PRIVATE void show() // 把用户的输入转化成显示到屏幕上的数据
     } else {
         set_cursor(row * WIDTH + col + target_size);
     }
-    
 }
 
 PRIVATE void change_to_common() 
@@ -130,13 +128,6 @@ PRIVATE void change_to_common()
     memset(target, 0, TEXR_SIZE);
     target_size = 0;
     mode = COMMON;
-}
-
-PRIVATE char key2char(u32 key) {
-    char ch = key & 0xFF;
-    if (locked == TRUE && ch >= 'a' && ch <= 'z')
-        ch = ch + 'A' - 'a';
-    return ch;
 }
 
 
@@ -147,10 +138,9 @@ PUBLIC void in_process(u32 key)
 {
     if ((key & FLAG_EXT) && (key & MASK_RAW) == CAPS_LOCK) {
         locked = locked == FALSE ? TRUE : FALSE;
-        return;
     } else if (mode == COMMON) {
         if (!(key & FLAG_EXT)) { // 非功能键
-            inputs[input_size++] = key2char(key);
+            inputs[input_size++] = key & 0xFF;
         } else {
             switch(key & MASK_RAW) {
                 case ENTER:
@@ -158,6 +148,7 @@ PUBLIC void in_process(u32 key)
                     break;
                 case TAB:
                     inputs[input_size++] = '\t';
+		    break;
                 case BACKSPACE:
                     if (input_size > 0)
                         inputs[--input_size] = 0;
@@ -171,7 +162,7 @@ PUBLIC void in_process(u32 key)
         }
     } else if (mode == SEARCH_INPUT) {
         if (!(key & FLAG_EXT)) {
-            target[target_size++] = key2char(key);
+            target[target_size++] = key & 0xFF; 
         } else {
             switch(key & MASK_RAW) {
                 case ENTER:

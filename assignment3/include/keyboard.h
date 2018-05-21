@@ -128,5 +128,4 @@ typedef struct s_kb {
 }KB_INPUT;
 
 
-
 #endif /* _ORANGES_KEYBOARD_H_ */

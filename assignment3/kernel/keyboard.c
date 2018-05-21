@@ -30,6 +30,7 @@ PRIVATE	int	column;
 
 PRIVATE u8	get_byte_from_kbuf();
 
+
 /*======================================================================*
                             keyboard_handler
  *======================================================================*/
@@ -59,6 +60,7 @@ PUBLIC void init_keyboard()
 	shift_l	= shift_r = 0;
 	alt_l	= alt_r   = 0;
 	ctrl_l	= ctrl_r  = 0;
+	caps_lock         = 0;
 
         put_irq_handler(KEYBOARD_IRQ, keyboard_handler);/*设定键盘中断处理程序*/
         enable_irq(KEYBOARD_IRQ);                       /*开键盘中断*/
@@ -134,7 +136,7 @@ PUBLIC void keyboard_read()
 			keyrow = &keymap[(scan_code & 0x7F) * MAP_COLS];
 			
 			column = 0;
-			if (shift_l || shift_r) {
+			if (caps_lock && !(shift_l | shift_r)) {
 				column = 1;
 			}
 			if (code_with_E0) {
@@ -163,12 +165,17 @@ PUBLIC void keyboard_read()
 			case ALT_R:
 				alt_r = make;
 				break;
+			case CAPS_LOCK:
+                		if (make) {
+					caps_lock = !caps_lock;				
+				}
+                		break;
 			default:
 				break;
 			}
 
 			if (make) { /* 忽略 Break Code */
-				key |= shift_l	? FLAG_SHIFT_L	: 0;
+				key |= shift_l 	? FLAG_SHIFT_L	: 0;
 				key |= shift_r	? FLAG_SHIFT_R	: 0;
 				key |= ctrl_l	? FLAG_CTRL_L	: 0;
 				key |= ctrl_r	? FLAG_CTRL_R	: 0;
