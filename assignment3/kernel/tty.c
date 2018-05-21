@@ -107,13 +107,22 @@ PRIVATE void show() // 把用户的输入转化成显示到屏幕上的数据
             col = 0;
         }
     }
-    if (mode != COMMON) 
+    if (mode != COMMON) {
+        row = HEIGHT - 1; // 最后一行
+        screen[(row * WIDTH) << 1] = ':';
+        screen[1 + ((row * WIDTH) << 1)] = 00x0e;
         for (int i = 0; i < target_size; i++) {
-            screen[(row * WIDTH + col + i) << 1] = target[i];
-            screen[((row * WIDTH + col + i) << 1) + 1] = 0x0e;
+            screen[(row * WIDTH + 1 + i) << 1] = target[i];
+            screen[((row * WIDTH + 1 + i) << 1) + 1] = 0x0e;
         }
+    }
     memcpy(V_MEM_BASE, screen, V_MEM_SIZE);
-    set_cursor(row * WIDTH + col + target_size);
+    if (mode != COMMON) {
+        set_cursor(row * WIDTH + target_size + 1);
+    } else {
+        set_cursor(row * WIDTH + col + target_size);
+    }
+    
 }
 
 PRIVATE void change_to_common() 
