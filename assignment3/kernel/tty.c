@@ -191,7 +191,7 @@ PUBLIC void in_process(u32 key)
                     break;
             }
         }
-    } else if (mode = SEARCH_VIEW && (key & FLAG_EXT) && (key & MASK_RAW) == ESC) {
+    } else if (mode == SEARCH_VIEW && (key & FLAG_EXT) && (key & MASK_RAW) == ESC) {
         change_to_common();
     }
     show();

@@ -161,7 +161,7 @@ PUBLIC void keyboard_read()
 				alt_l = make;
 				break;
 			case ALT_R:
-				alt_l = make;
+				alt_r = make;
 				break;
 			default:
 				break;
