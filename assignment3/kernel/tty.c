@@ -28,12 +28,11 @@ typedef int Boolean;
 #define TEXR_SIZE V_MEM_SIZE / 2
 #define WIDTH 80
 #define HEIGHT 25
+#define TARGET_LIMIT 80 - 1
 
-
-PRIVATE Boolean locked = FALSE;
 PRIVATE Mode mode = COMMON;
 PRIVATE char inputs[TEXR_SIZE]; // 用户的输入字符串，缓存在内存里
-PRIVATE char target[TEXR_SIZE]; // 用户搜索时候输入的字符串
+PRIVATE char target[TARGET_LIMIT]; // 用户搜索时候输入的字符串
 PRIVATE u8 screen[V_MEM_SIZE]; // 显示器的副本
 PRIVATE int input_size = 0;
 PRIVATE int target_size = 0;
@@ -125,7 +124,7 @@ PRIVATE void show() // 把用户的输入转化成显示到屏幕上的数据
 
 PRIVATE void change_to_common() 
 {
-    memset(target, 0, TEXR_SIZE);
+    memset(target, 0, TARGET_LIMIT);
     target_size = 0;
     mode = COMMON;
 }
@@ -136,9 +135,7 @@ PRIVATE void change_to_common()
  *======================================================================*/
 PUBLIC void in_process(u32 key)
 {
-    if ((key & FLAG_EXT) && (key & MASK_RAW) == CAPS_LOCK) {
-        locked = locked == FALSE ? TRUE : FALSE;
-    } else if (mode == COMMON) {
+   if (mode == COMMON) {
         if (!(key & FLAG_EXT)) { // 非功能键
             inputs[input_size++] = key & 0xFF;
         } else {
@@ -161,7 +158,7 @@ PUBLIC void in_process(u32 key)
             }
         }
     } else if (mode == SEARCH_INPUT) {
-        if (!(key & FLAG_EXT)) {
+        if (!(key & FLAG_EXT) && target_size < TARGET_LIMIT - 1) {
             target[target_size++] = key & 0xFF; 
         } else {
             switch(key & MASK_RAW) {

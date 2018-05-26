@@ -30,7 +30,6 @@ PRIVATE	int	column;
 
 PRIVATE u8	get_byte_from_kbuf();
 
-
 /*======================================================================*
                             keyboard_handler
  *======================================================================*/
@@ -142,6 +141,9 @@ PUBLIC void keyboard_read()
 			if (code_with_E0) {
 				column = 2; 
 				code_with_E0 = 0;
+			}
+			if (!caps_lock && (shift_l || shift_r)) {
+				column = 1;
 			}
 			
 			key = keyrow[column];
