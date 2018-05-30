@@ -64,7 +64,7 @@ public class S161250220 extends Schedule {
         int lastTime = getTaskLastTime(taskID);
         int waitedTime = getTaskWaitTime(taskID);
         Double leastTolerance = priceFunction(lastTime + waitedTime);
-        Double delayTolerance = priceFunction(lastTime + waitedTime + 2);
+        Double delayTolerance = priceFunction(lastTime + waitedTime + getCpuNumber());
         if (delayTolerance == Double.MAX_VALUE)
             return Double.MAX_VALUE;
         else
