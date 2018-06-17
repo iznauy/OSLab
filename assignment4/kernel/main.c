@@ -13,6 +13,12 @@
 #include "proc.h"
 #include "global.h"
 
+#define CHAR 2
+
+int waiting;
+int cid;
+
+Semaphore customer, barber, mutex;
 
 /*======================================================================*
                             kernel_main
@@ -117,4 +123,19 @@ void TestC()
 		disp_str("C.");
 		milli_delay(10);
 	}
+}
+
+void A()
+{
+    while(1){}
+}
+
+void barber()
+{
+    
+}
+
+void customer()
+{
+    
 }
