@@ -28,6 +28,10 @@ void TestA();
 void TestB();
 void TestC();
 
+void A();
+void Barber();
+void Customer();
+
 /* i8259.c */
 PUBLIC void put_irq_handler(int irq, irq_handler handler);
 PUBLIC void spurious_irq(int irq);
