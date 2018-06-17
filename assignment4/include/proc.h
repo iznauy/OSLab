@@ -35,7 +35,7 @@ typedef struct s_proc {
 	DESCRIPTOR ldts[LDT_SIZE]; /* local descriptors for code and data */
 
         int ticks;                 /* remained ticks */
-        int priority;
+        int blocked;
 
 	u32 pid;                   /* process id passed in from MM */
 	char p_name[16];           /* name of the process */
@@ -51,7 +51,7 @@ typedef struct s_semaphore
 {
 	int x;
 	PROCESS * queue[5]; // 进程等待队列
-};
+} Semaphore;
 
 /* Number of tasks */
 #define NR_TASKS	5

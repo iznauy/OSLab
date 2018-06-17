@@ -36,6 +36,9 @@ PUBLIC int kernel_main()
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
 		p_proc->pid = i;			// pid
 
+		p_proc->blocked = 0;
+		p_proc->ticks = 0;
+
 		p_proc->ldt_sel = selector_ldt;
 
 		memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
@@ -67,9 +70,13 @@ PUBLIC int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-	proc_table[0].ticks = proc_table[0].priority = 15;
-	proc_table[1].ticks = proc_table[1].priority =  5;
-	proc_table[2].ticks = proc_table[2].priority =  3;
+	waiting = 0;
+	cid = 0;
+	customer.x = barber.x = 0;
+	mutex.x = 1;
+
+	memset(0xB8000, 0, 80 * 25 * 2);
+	disp_pos = 0;
 
 	k_reenter = 0;
 	ticks = 0;
@@ -132,10 +139,43 @@ void A()
 
 void barber()
 {
-    
+	process_sleep(50000);
+    user_disp_str("Barber start to work!");
+	while (1) {
+		sem_p(&customer);
+		user_disp_str("Begin to cut hair\n");
+		process_sleep(100000);
+		user_disp_str("Finish cut hair\n");
+		sem_v(&barber);
+	}
 }
 
 void customer()
 {
-    
+	while (1) {
+		sem_p(&mutex);
+		cid++;
+		int id = cid;
+		user_disp_str("Customer: ");
+		disp_int(id);
+		if (waiting >= CHAR) {
+			user_disp_str(" come, but no chair, leave\n");
+			sem_v(&mutex);
+		} else {
+			waiting++;
+			user_disp_str(" come and waiting\n");
+			sem_v(&mutex);
+			sem_v(&customer);
+			sem_p(&barber);
+
+			user_disp_str("Customer: ");
+			disp_int(id);
+			user_disp_str(" got haircut, leave\n");
+
+			sem_p(&mutex);
+			waiting--;
+			sem_v(&mutex);
+		}
+		process_sleep(100000);
+	}
 }

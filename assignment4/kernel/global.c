@@ -19,9 +19,11 @@ PUBLIC	PROCESS			proc_table[NR_TASKS];
 
 PUBLIC	char			task_stack[STACK_SIZE_TOTAL];
 
-PUBLIC	TASK	task_table[NR_TASKS] = {{TestA, STACK_SIZE_TESTA, "TestA"},
-					{TestB, STACK_SIZE_TESTB, "TestB"},
-					{TestC, STACK_SIZE_TESTC, "TestC"}};
+PUBLIC	TASK	task_table[NR_TASKS] = {{A, STACK_SIZE_TESTA, "A"},
+					{barber, STACK_SIZE_TESTB, "B"},
+					{customer, STACK_SIZE_TESTC, "C"},
+					{customer, STACK_SIZE_TESTD, "D"},
+					{customer, STACK_SIZE_TESTE, "E"}};
 
 PUBLIC	irq_handler		irq_table[NR_IRQ];
 
