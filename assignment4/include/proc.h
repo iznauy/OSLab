@@ -5,6 +5,8 @@
                                                     Forrest Yu, 2005
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
+#ifndef	_ORANGES_PROC_H_
+#define	_ORANGES_PROC_H_
 
 typedef struct s_stackframe {	/* proc_ptr points here				↑ Low			*/
 	u32	gs;		/* ┓						│			*/
@@ -70,3 +72,4 @@ typedef struct s_semaphore
 				STACK_SIZE_TESTE)
 
 
+#endif

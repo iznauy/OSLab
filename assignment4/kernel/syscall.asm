@@ -33,23 +33,23 @@ get_ticks:
 	ret
 
 process_sleep: ; void process_sleep(int milli_seconds);
-	mov eav, _NR_process_sleep
+	mov eax, _NR_process_sleep
 	mov ebx, [esp + 4] ; 参数，睡眠的毫秒数
 	int	INT_VECTOR_SYS_CALL
 	ret
 
 user_disp_str: ; void user_disp_str(char * str);
-	mov eav, _NR_disp_str
+	mov eax, _NR_disp_str
 	mov ebx, [esp + 4] ; 参数，字符串首地址
 	int	INT_VECTOR_SYS_CALL
 	ret
 
 sem_p: ; void sem_p(Semaphore * s);
-	mov eav, _NR_sem_p
+	mov eax, _NR_sem_p
 	mov ebx, [esp + 4] ; 参数，获取的信号量的编号
 	int	INT_VECTOR_SYS_CALL
 
 sem_v: ; void sem_v(Semaphore * s);
-	mov eav, _NR_sem_v
+	mov eax, _NR_sem_v
 	mov ebx, [esp + 4] ; 参数，释放的信号量的编号
 	int	INT_VECTOR_SYS_CALL
