@@ -137,7 +137,7 @@ void A()
     while(1){}
 }
 
-void barber()
+void Barber()
 {
 	process_sleep(50000);
     user_disp_str("Barber start to work!");
@@ -150,7 +150,7 @@ void barber()
 	}
 }
 
-void customer()
+void Customer()
 {
 	while (1) {
 		sem_p(&mutex);
