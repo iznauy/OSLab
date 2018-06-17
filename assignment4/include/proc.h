@@ -5,8 +5,8 @@
                                                     Forrest Yu, 2005
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-#ifndef	_ORANGES_PROC_H_
-#define	_ORANGES_PROC_H_
+#ifndef _IZNAUY_PROC_H
+#define _IZNAUY_PROC_H
 
 typedef struct s_stackframe {	/* proc_ptr points here				↑ Low			*/
 	u32	gs;		/* ┓						│			*/
@@ -36,8 +36,8 @@ typedef struct s_proc {
 	u16 ldt_sel;               /* gdt selector giving ldt base and limit */
 	DESCRIPTOR ldts[LDT_SIZE]; /* local descriptors for code and data */
 
-        int ticks;                 /* remained ticks */
-        int blocked;
+	int ticks;
+	int blocked;
 
 	u32 pid;                   /* process id passed in from MM */
 	char p_name[16];           /* name of the process */
@@ -49,11 +49,11 @@ typedef struct s_task {
 	char	name[32];
 }TASK;
 
-typedef struct s_semaphore
-{
-	int x;
-	PROCESS * queue[5]; // 进程等待队列
+typedef struct s_semaphore {
+        int     x;
+        PROCESS *queue[10];
 } Semaphore;
+
 
 /* Number of tasks */
 #define NR_TASKS	5
@@ -63,13 +63,13 @@ typedef struct s_semaphore
 #define STACK_SIZE_TESTB	0x8000
 #define STACK_SIZE_TESTC	0x8000
 #define STACK_SIZE_TESTD	0x8000
-#define STACK_SIZE_TESTE	0X8000
+#define STACK_SIZE_TESTE	0x8000
 
 #define STACK_SIZE_TOTAL	(STACK_SIZE_TESTA + \
-				STACK_SIZE_TESTB + \
-				STACK_SIZE_TESTC + \
-				STACK_SIZE_TESTD + \
-				STACK_SIZE_TESTE)
+					STACK_SIZE_TESTB + \
+					STACK_SIZE_TESTC + \
+					STACK_SIZE_TESTD + \
+					STACK_SIZE_TESTE)
 
 
 #endif

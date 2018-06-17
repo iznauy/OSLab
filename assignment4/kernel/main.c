@@ -13,12 +13,23 @@
 #include "proc.h"
 #include "global.h"
 
-#define CHAR 2
+#define CHAIR 2
+#define TIME_SLICE 40000
 
-int waiting;
-int cid;
-
+int count;
+int c_id;
 Semaphore customer, barber, mutex;
+
+PRIVATE void init()
+{
+    count = 0;
+    c_id = 0;
+    customer.x = barber.x = 0;
+    mutex.x = 1;
+
+    memset(0xB8000, 0, 80 * 25 * 2);
+    disp_pos = 0;
+}
 
 /*======================================================================*
                             kernel_main
@@ -36,10 +47,11 @@ PUBLIC int kernel_main()
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
 		p_proc->pid = i;			// pid
 
-		p_proc->blocked = 0;
-		p_proc->ticks = 0;
-
 		p_proc->ldt_sel = selector_ldt;
+
+        p_proc->blocked = 0; // don't blocked in the first place
+
+        p_proc->ticks = 0; // ticks = 0 in the beginning
 
 		memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
 		       sizeof(DESCRIPTOR));
@@ -70,13 +82,8 @@ PUBLIC int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-	waiting = 0;
-	cid = 0;
-	customer.x = barber.x = 0;
-	mutex.x = 1;
 
-	memset(0xB8000, 0, 80 * 25 * 2);
-	disp_pos = 0;
+    init();
 
 	k_reenter = 0;
 	ticks = 0;
@@ -93,89 +100,62 @@ PUBLIC int kernel_main()
 
 	restart();
 
-	while(1){}
-}
-
-/*======================================================================*
-                               TestA
- *======================================================================*/
-void TestA()
-{
-	int i = 0;
-	while (1) {
-		disp_str("A.");
-		milli_delay(10);
-	}
-}
-
-/*======================================================================*
-                               TestB
- *======================================================================*/
-void TestB()
-{
-	int i = 0x1000;
-	while(1){
-		disp_str("B.");
-		milli_delay(10);
-	}
-}
-
-/*======================================================================*
-                               TestB
- *======================================================================*/
-void TestC()
-{
-	int i = 0x2000;
-	while(1){
-		disp_str("C.");
-		milli_delay(10);
-	}
+        while(1){}
 }
 
 void A()
 {
-    while(1){}
+    while (1) {
+        user_disp_str("Are you OK?\n");
+        milli_delay(TIME_SLICE);
+    }
 }
 
 void Barber()
 {
-	process_sleep(50000);
-    user_disp_str("Barber start to work!");
-	while (1) {
-		sem_p(&customer);
-		user_disp_str("Begin to cut hair\n");
-		process_sleep(100000);
-		user_disp_str("Finish cut hair\n");
-		sem_v(&barber);
-	}
+    user_disp_str("Barber sleeping...\n");
+    process_sleep(TIME_SLICE);
+    user_disp_str("Barber awake...\n");
+    while(1){
+        sem_p(&customer);
+        user_disp_str("Barber begins to cut hair...\n");
+        process_sleep(2 * TIME_SLICE);
+        user_disp_str("Barber haircut done!\n");
+        sem_v(&barber);
+    }
 }
 
 void Customer()
 {
-	while (1) {
-		sem_p(&mutex);
-		cid++;
-		int id = cid;
-		user_disp_str("Customer: ");
-		disp_int(id);
-		if (waiting >= CHAR) {
-			user_disp_str(" come, but no chair, leave\n");
-			sem_v(&mutex);
-		} else {
-			waiting++;
-			user_disp_str(" come and waiting\n");
-			sem_v(&mutex);
-			sem_v(&customer);
-			sem_p(&barber);
+    while (1) {
+        sem_p(&mutex);
+        c_id++;
 
-			user_disp_str("Customer: ");
-			disp_int(id);
-			user_disp_str(" got haircut, leave\n");
+        int id = c_id;
+        user_disp_str("Customer ");
+        user_disp_int(id);
+        user_disp_str(" come.\nCurrent waiting count: ");
+        user_disp_int(count);
+        if (count >= CHAIR) {
+            user_disp_str(", no chair, leave\n");
+            sem_v(&mutex);
+        } else {
+            count++;
+            user_disp_str(", waiting\n");
+            sem_v(&mutex);
 
-			sem_p(&mutex);
-			waiting--;
-			sem_v(&mutex);
-		}
-		process_sleep(100000);
-	}
+            sem_v(&customer);
+            sem_p(&barber);
+
+            user_disp_str("Customer ");
+            user_disp_int(id);
+            user_disp_str(" got haircut\n");
+
+            sem_p(&mutex);
+            count--;
+            sem_v(&mutex);
+        }
+        process_sleep(TIME_SLICE);
+    }
 }
+

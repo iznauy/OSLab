@@ -24,13 +24,11 @@ PUBLIC void	delay(int time);
 void restart();
 
 /* main.c */
-void TestA();
-void TestB();
-void TestC();
 
 void A();
 void Barber();
 void Customer();
+
 
 /* i8259.c */
 PUBLIC void put_irq_handler(int irq, irq_handler handler);
@@ -44,16 +42,18 @@ PUBLIC void clock_handler(int irq);
 
 /* proc.c */
 PUBLIC  int     sys_get_ticks();        /* sys_call */
-PUBLIC  void    sys_process_sleep(int mill_seconds);
-PUBLIC  void    sys_disp_str(char * str);
+PUBLIC  void    sys_process_sleep(int milli_seconds);
+PUBLIC  void    sys_disp_str(char* str);
+PUBLIC	void	sys_disp_int(int value);
 PUBLIC  void    sys_sem_p(Semaphore * s);
 PUBLIC  void    sys_sem_v(Semaphore * s);
 
 /* syscall.asm */
 PUBLIC  void    sys_call();             /* int_handler */
 PUBLIC  int     get_ticks();
-PUBLIC  void    process_sleep(int milli_seconds);
-PUBLIC  void    user_disp_str(char * str);
+PUBLIC  void    process_sleep(int milli_second);
+PUBLIC  void    user_disp_str(char* str);
+PUBLIC	void	user_disp_int(int value);
 PUBLIC  void    sem_p(Semaphore * s);
 PUBLIC  void    sem_v(Semaphore * s);
 
