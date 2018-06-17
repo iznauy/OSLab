@@ -38,8 +38,16 @@ PUBLIC void clock_handler(int irq);
 
 /* proc.c */
 PUBLIC  int     sys_get_ticks();        /* sys_call */
+PUBLIC  void    sys_process_sleep(int mill_seconds);
+PUBLIC  void    sys_disp_str(char * str);
+PUBLIC  void    sys_sem_p(Semaphore * s);
+PUBLIC  void    sys_sem_v(Semaphore * s);
 
 /* syscall.asm */
 PUBLIC  void    sys_call();             /* int_handler */
 PUBLIC  int     get_ticks();
+PUBLIC  void    process_sleep(int milli_seconds);
+PUBLIC  void    user_disp_str(char * str);
+PUBLIC  void    sem_p(Semaphore * s);
+PUBLIC  void    sem_v(Semaphore * s);
 

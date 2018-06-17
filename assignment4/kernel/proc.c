@@ -45,3 +45,23 @@ PUBLIC int sys_get_ticks()
 	return ticks;
 }
 
+PUBLIC void sys_process_sleep(int mill_seconds) 
+{
+
+}
+
+PUBLIC void sys_disp_str(char * str) 
+{
+
+}
+
+PUBLIC void sys_sem_p(Semaphore * s)
+{
+
+}
+
+PUBLIC void sys_sem_v(Semaphore * s) 
+{
+	
+}
+

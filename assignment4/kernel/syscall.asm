@@ -44,12 +44,12 @@ user_disp_str: ; void user_disp_str(char * str);
 	int	INT_VECTOR_SYS_CALL
 	ret
 
-sem_p: ; void sem_p(int i);
+sem_p: ; void sem_p(Semaphore * s);
 	mov eav, _NR_sem_p
 	mov ebx, [esp + 4] ; 参数，获取的信号量的编号
 	int	INT_VECTOR_SYS_CALL
 
-sem_v: ; void sem_v(int i);
+sem_v: ; void sem_v(Semaphore * s);
 	mov eav, _NR_sem_v
 	mov ebx, [esp + 4] ; 参数，释放的信号量的编号
 	int	INT_VECTOR_SYS_CALL
